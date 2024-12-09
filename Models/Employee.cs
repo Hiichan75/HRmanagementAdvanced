@@ -26,3 +26,4 @@ namespace HRmanagementAdvanced.Models
         public ICollection<Absence> Absences { get; set; } // Navigation property for Absences
     }
 }
+//

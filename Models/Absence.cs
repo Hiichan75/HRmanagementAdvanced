@@ -19,3 +19,4 @@ namespace HRmanagementAdvanced.Models
         public Employee Employee { get; set; } // Navigation property
     }
 }
+//

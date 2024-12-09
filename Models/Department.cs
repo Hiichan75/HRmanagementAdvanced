@@ -14,3 +14,4 @@ namespace HRmanagementAdvanced.Models
         public ICollection<Employee> Employees { get; set; } = new List<Employee>();
     }
 }
+//
