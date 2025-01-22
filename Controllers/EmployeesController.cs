@@ -1,165 +1,203 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
+﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using HRmanagementAdvanced.Data;
 using HRmanagementAdvanced.Models;
+using System.Linq;
+using System.Threading.Tasks;
 
-namespace HRmanagementAdvanced.Controllers
+[Authorize]
+public class EmployeesController : Controller
 {
-    public class EmployeesController : Controller
+    private readonly PersonenDbContext _context;
+
+    public EmployeesController(PersonenDbContext context)
     {
-        private readonly PersonenDbContext _context;
+        _context = context;
+    }
 
-        public EmployeesController(PersonenDbContext context)
+    // Display all non-deleted employees
+    public async Task<IActionResult> Index(string sortOrder, string searchString)
+    {
+        ViewData["CurrentFilter"] = searchString;
+        ViewData["NameSortParm"] = String.IsNullOrEmpty(sortOrder) ? "name_desc" : "";
+        ViewData["DepartmentSortParm"] = sortOrder == "Department" ? "department_desc" : "Department";
+
+        var employeesQuery = _context.Employees
+            .Where(e => !e.IsDeleted)
+            .Include(e => e.Department)
+            .AsQueryable();
+
+        if (!string.IsNullOrEmpty(searchString))
         {
-            _context = context;
+            employeesQuery = employeesQuery.Where(e => e.Name.Contains(searchString) ||
+                                                       e.ContactInfo.Contains(searchString));
         }
 
-        // GET: Employees
-        public async Task<IActionResult> Index()
+        employeesQuery = sortOrder switch
         {
-            var personenDbContext = _context.Employees.Include(e => e.Department);
-            return View(await personenDbContext.ToListAsync());
+            "name_desc" => employeesQuery.OrderByDescending(e => e.Name),
+            "Department" => employeesQuery.OrderBy(e => e.Department.DepartmentName),
+            "department_desc" => employeesQuery.OrderByDescending(e => e.Department.DepartmentName),
+            _ => employeesQuery.OrderBy(e => e.Name),
+        };
+
+        return View(await employeesQuery.ToListAsync());
+    }
+
+
+
+    // View employee details
+    public async Task<IActionResult> Details(int? id)
+    {
+        if (id == null)
+        {
+            return NotFound();
         }
 
-        // GET: Employees/Details/5
-        public async Task<IActionResult> Details(int? id)
+        var employee = await _context.Employees
+    .Include(e => e.Absences)
+    .Include(e => e.Department)
+    .FirstOrDefaultAsync(e => e.EmployeeID == id && !e.IsDeleted);
+        // Exclude deleted employees
+
+        if (employee == null)
         {
-            if (id == null)
-            {
-                return NotFound();
-            }
-
-            var employee = await _context.Employees
-                .Include(e => e.Department)
-                .FirstOrDefaultAsync(m => m.EmployeeID == id);
-            if (employee == null)
-            {
-                return NotFound();
-            }
-
-            return View(employee);
+            return NotFound();
         }
 
-        // GET: Employees/Create
-        public IActionResult Create()
+        return View(employee);
+    }
+
+    // Create a new employee
+    [Authorize(Roles = "Admin")]
+    public IActionResult Create()
+    {
+        // Load non-deleted departments for the dropdown
+        ViewData["DepartmentID"] = new SelectList(
+            _context.Departments.Where(d => !d.IsDeleted),
+            "DepartmentID",
+            "DepartmentName");
+
+        return View();
+    }
+
+    [Authorize(Roles = "Admin")]
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> Create([Bind("Name,ContactInfo,Salary,DepartmentID")] Employee employee)
+    {
+        if (ModelState.IsValid)
         {
-            ViewData["DepartmentID"] = new SelectList(_context.Departments, "DepartmentID", "DepartmentName");
-            return View();
-        }
 
-        // POST: Employees/Create
-        // To protect from overposting attacks, enable the specific properties you want to bind to.
-        // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create([Bind("EmployeeID,Name,ContactInfo,Salary,DepartmentID,IsDeleted")] Employee employee)
-        {
-            if (ModelState.IsValid)
-            {
-                _context.Add(employee);
-                await _context.SaveChangesAsync();
-                return RedirectToAction(nameof(Index));
-            }
-            ViewData["DepartmentID"] = new SelectList(_context.Departments, "DepartmentID", "DepartmentName", employee.DepartmentID);
-            return View(employee);
-        }
-
-        // GET: Employees/Edit/5
-        public async Task<IActionResult> Edit(int? id)
-        {
-            if (id == null)
-            {
-                return NotFound();
-            }
-
-            var employee = await _context.Employees.FindAsync(id);
-            if (employee == null)
-            {
-                return NotFound();
-            }
-            ViewData["DepartmentID"] = new SelectList(_context.Departments, "DepartmentID", "DepartmentName", employee.DepartmentID);
-            return View(employee);
-        }
-
-        // POST: Employees/Edit/5
-        // To protect from overposting attacks, enable the specific properties you want to bind to.
-        // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(int id, [Bind("EmployeeID,Name,ContactInfo,Salary,DepartmentID,IsDeleted")] Employee employee)
-        {
-            if (id != employee.EmployeeID)
-            {
-                return NotFound();
-            }
-
-            if (ModelState.IsValid)
-            {
-                try
-                {
-                    _context.Update(employee);
-                    await _context.SaveChangesAsync();
-                }
-                catch (DbUpdateConcurrencyException)
-                {
-                    if (!EmployeeExists(employee.EmployeeID))
-                    {
-                        return NotFound();
-                    }
-                    else
-                    {
-                        throw;
-                    }
-                }
-                return RedirectToAction(nameof(Index));
-            }
-            ViewData["DepartmentID"] = new SelectList(_context.Departments, "DepartmentID", "DepartmentName", employee.DepartmentID);
-            return View(employee);
-        }
-
-        // GET: Employees/Delete/5
-        public async Task<IActionResult> Delete(int? id)
-        {
-            if (id == null)
-            {
-                return NotFound();
-            }
-
-            var employee = await _context.Employees
-                .Include(e => e.Department)
-                .FirstOrDefaultAsync(m => m.EmployeeID == id);
-            if (employee == null)
-            {
-                return NotFound();
-            }
-
-            return View(employee);
-        }
-
-        // POST: Employees/Delete/5
-        [HttpPost, ActionName("Delete")]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> DeleteConfirmed(int id)
-        {
-            var employee = await _context.Employees.FindAsync(id);
-            if (employee != null)
-            {
-                _context.Employees.Remove(employee);
-            }
-
+            _context.Add(employee);
             await _context.SaveChangesAsync();
+            return RedirectToAction(nameof(Index)); // Redirect to the list after creation
+        }
+
+        // Reload departments in case of an error
+        ViewData["DepartmentID"] = new SelectList(
+            _context.Departments.Where(d => !d.IsDeleted),
+            "DepartmentID",
+            "DepartmentName",
+            employee.DepartmentID);
+
+        return View(employee);
+    }
+
+    // Edit an existing employee
+    [Authorize(Roles = "Admin")]
+    public async Task<IActionResult> Edit(int? id)
+    {
+        if (id == null)
+        {
+            return NotFound();
+        }
+
+        var employee = await _context.Employees.FirstOrDefaultAsync(e => e.EmployeeID == id && !e.IsDeleted);
+        if (employee == null)
+        {
+            return NotFound();
+        }
+
+        ViewData["DepartmentID"] = new SelectList(_context.Departments.Where(d => !d.IsDeleted), "DepartmentID", "DepartmentName", employee.DepartmentID);
+        return View(employee);
+    }
+
+    [Authorize(Roles = "Admin")]
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> Edit(int id, [Bind("EmployeeID,Name,ContactInfo,Salary,DepartmentID")] Employee employee)
+    {
+        if (id != employee.EmployeeID)
+        {
+            return NotFound();
+        }
+
+        if (ModelState.IsValid)
+        {
+            try
+            {
+                _context.Update(employee);
+                await _context.SaveChangesAsync();
+            }
+            catch (DbUpdateConcurrencyException)
+            {
+                if (!_context.Employees.Any(e => e.EmployeeID == id))
+                {
+                    return NotFound();
+                }
+                else
+                {
+                    throw;
+                }
+            }
             return RedirectToAction(nameof(Index));
         }
 
-        private bool EmployeeExists(int id)
-        {
-            return _context.Employees.Any(e => e.EmployeeID == id);
-        }
+        ViewData["DepartmentID"] = new SelectList(_context.Departments.Where(d => !d.IsDeleted), "DepartmentID", "DepartmentName", employee.DepartmentID);
+        return View(employee);
     }
+
+
+    // Soft delete an employee
+    [Authorize(Roles = "Admin")]
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> SoftDelete(int id)
+    {
+        var employee = await _context.Employees.FindAsync(id);
+        if (employee != null)
+        {
+            employee.IsDeleted = true; // Mark as soft-deleted
+            _context.Update(employee);
+            await _context.SaveChangesAsync();
+        }
+
+        return RedirectToAction(nameof(Index));
+    }
+
+    private bool EmployeeExists(int id)
+    {
+        return _context.Employees.Any(e => e.EmployeeID == id);
+    }
+    // Ajax method for dynamic employee details
+    [HttpGet]
+    public async Task<IActionResult> EmployeeDetailsAjax(int id)
+    {
+        var employee = await _context.Employees
+            .Include(e => e.Department)
+            .Include(e => e.Absences)
+            .FirstOrDefaultAsync(e => e.EmployeeID == id && !e.IsDeleted);
+
+        if (employee == null)
+        {
+            return NotFound();
+        }
+
+        return PartialView("_EmployeeDetailsPartial", employee); // Ensure this matches the partial view name
+    }
+
 }
-//
+

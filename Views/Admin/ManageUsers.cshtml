@@ -1,0 +1,52 @@
+﻿@model IEnumerable<HRmanagementAdvanced.Models.CustomUser>
+
+@using Microsoft.AspNetCore.Mvc.Localization
+@inject IViewLocalizer Localizer
+
+@{
+    ViewData["Title"] = "Manage Users";
+    var userRoles = ViewData["UserRoles"] as Dictionary<string, IList<string>>;
+}
+
+<h1>@Localizer["Manage Users"]</h1>
+
+<table class="table">
+    <thead>
+        <tr>
+            <th>Username</th>
+            <th>Email</th>
+            <th>Roles</th>
+            <th>Actions</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var user in Model)
+        {
+            <tr>
+                <td>@user.UserName</td>
+                <td>@user.Email</td>
+                <td>
+                    @if (userRoles != null && userRoles.ContainsKey(user.Id))
+                    {
+                        @string.Join(", ", userRoles[user.Id])
+                    }
+                </td>
+                <td>
+                    <form asp-action="AssignRole" method="post" style="display:inline;">
+                        <input type="hidden" name="userId" value="@user.Id" />
+                        <select name="role" class="form-select">
+                            <option value="User">User</option>
+                            <option value="Admin">Admin</option>
+                        </select>
+                        <button type="submit" class="btn btn-primary">Assign Role</button>
+                    </form>
+                    
+                    <form asp-action="HardDeleteUser" method="post" style="display:inline;">
+                        <input type="hidden" name="userId" value="@user.Id" />
+                        <button type="submit" class="btn btn-danger">Hard Delete</button>
+                    </form>
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>

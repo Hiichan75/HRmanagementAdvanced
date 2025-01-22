@@ -1,59 +1,91 @@
 ﻿@model IEnumerable<HRmanagementAdvanced.Models.Employee>
+@using Microsoft.AspNetCore.Mvc.Localization
+@inject IViewLocalizer Localizer
 
 @{
-    ViewData["Title"] = "Index";
+    ViewData["Title"] = Localizer["Employees"];
 }
 
-<h1>Index</h1>
+<h1>@Localizer["Employees"]</h1>
+
+<form method="get" asp-action="Index">
+    <div class="input-group mb-3">
+        <input type="text" name="searchString" class="form-control" placeholder="@Localizer["Search employees"]..."
+               value="@ViewData["CurrentFilter"]" />
+        <button class="btn btn-outline-secondary" type="submit">@Localizer["Search"]</button>
+    </div>
+</form>
 
 <p>
-    <a asp-action="Create">Create New</a>
+    <a asp-action="Create" class="btn btn-primary">@Localizer["Create New"]</a>
 </p>
-<table class="table">
+<table class="table table-striped">
     <thead>
         <tr>
             <th>
-                @Html.DisplayNameFor(model => model.Name)
+                <a asp-action="Index" asp-route-sortOrder="@ViewData["NameSortParm"]">@Localizer["Name"]</a>
             </th>
+            <th>@Localizer["Contact Info"]</th>
             <th>
-                @Html.DisplayNameFor(model => model.ContactInfo)
+                <a asp-action="Index" asp-route-sortOrder="@ViewData["SalarySortParm"]">@Localizer["Salary"]</a>
             </th>
-            <th>
-                @Html.DisplayNameFor(model => model.Salary)
-            </th>
-            <th>
-                @Html.DisplayNameFor(model => model.IsDeleted)
-            </th>
-            <th>
-                @Html.DisplayNameFor(model => model.Department)
-            </th>
-            <th></th>
+            <th>@Localizer["Department"]</th>
+            <th>@Localizer["Actions"]</th>
         </tr>
     </thead>
     <tbody>
-@foreach (var item in Model) {
-        <tr>
-            <td>
-                @Html.DisplayFor(modelItem => item.Name)
-            </td>
-            <td>
-                @Html.DisplayFor(modelItem => item.ContactInfo)
-            </td>
-            <td>
-                @Html.DisplayFor(modelItem => item.Salary)
-            </td>
-            <td>
-                @Html.DisplayFor(modelItem => item.IsDeleted)
-            </td>
-            <td>
-                @Html.DisplayFor(modelItem => item.Department.DepartmentName)
-            </td>
-            <td>
-                <a asp-action="Edit" asp-route-id="@item.EmployeeID">Edit</a> |
-                <a asp-action="Details" asp-route-id="@item.EmployeeID">Details</a> |
-                <a asp-action="Delete" asp-route-id="@item.EmployeeID">Delete</a>
-            </td>
-        </tr>
-}
+        @foreach (var employee in Model)
+        {
+            <tr>
+                <td>
+                    <a href="#" class="open-modal" data-id="@employee.EmployeeID">@employee.Name</a>
+                </td>
+                <td>@employee.ContactInfo</td>
+                <td>@employee.Salary.ToString("C", new System.Globalization.CultureInfo("en-US"))</td>
+                <td>@employee.Department.DepartmentName</td>
+                <td>
+                    <a asp-action="Edit" asp-route-id="@employee.EmployeeID" class="btn btn-warning btn-sm">@Localizer["Edit"]</a>
+                    <form asp-action="SoftDelete" asp-route-id="@employee.EmployeeID" method="post" style="display:inline;">
+                        <button type="submit" class="btn btn-danger btn-sm">@Localizer["Delete"]</button>
+                    </form>
+                </td>
+            </tr>
+        }
     </tbody>
 </table>
+
+<!-- Modal -->
+<div class="modal fade" id="detailsModal" tabindex="-1" aria-labelledby="detailsModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="detailsModalLabel">@Localizer["Employee Details"]</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body" id="modalContent">
+                <!-- Content loaded dynamically via Ajax -->
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+<script>
+    $(document).on('click', '.open-modal', function (e) {
+        e.preventDefault();
+        const id = $(this).data('id');
+
+        $.ajax({
+            url: '/Employees/EmployeeDetailsAjax',
+            type: 'GET',
+            data: { id: id },
+            success: function (result) {
+                $('#modalContent').html(result);
+                $('#detailsModal').modal('show');
+            },
+            error: function () {
+                alert('@Localizer["Failed to load employee details."]');
+            }
+        });
+    });
+</script>

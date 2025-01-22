@@ -1,0 +1,16 @@
+﻿@model HRmanagementAdvanced.Models.Employee
+
+<div>
+    <h4>@Model.Name</h4>
+    <p><strong>Contact Info:</strong> @Model.ContactInfo</p>
+    <p><strong>Salary:</strong> @Model.Salary.ToString("C", new System.Globalization.CultureInfo("fr-FR"))</p>
+
+    <p><strong>Department:</strong> @Model.Department.DepartmentName</p>
+    <p><strong>Absences:</strong></p>
+    <ul>
+        @foreach (var absence in Model.Absences)
+        {
+            <li>@absence.Date.ToShortDateString(): @absence.Reason</li>
+        }
+    </ul>
+</div>

@@ -1,33 +1,78 @@
-﻿<!DOCTYPE html>
-<html lang="en">
+﻿@using HRmanagementAdvanced
+@using HRmanagementAdvanced.Models
+@using Microsoft.AspNetCore.Identity
+@inject UserManager<CustomUser> UserManager
+@addTagHelper *, Microsoft.AspNetCore.Mvc.TagHelpers
+@inject Microsoft.AspNetCore.Mvc.Localization.IViewLocalizer Localizer
+
+<!DOCTYPE html>
+<html lang="@Thread.CurrentThread.CurrentUICulture.Name">
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>@ViewData["Title"] - HRmanagementAdvanced</title>
+    <title>@Localizer["Title"] - HRmanagementAdvanced</title>
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
-    <link rel="stylesheet" href="~/HRmanagementAdvanced.styles.css" asp-append-version="true" />
 </head>
 <body>
     <header>
         <nav class="navbar navbar-expand-sm navbar-light bg-light">
             <div class="container">
-                <a class="navbar-brand" asp-area="" asp-controller="Home" asp-action="Index">HR Management</a>
+                <a class="navbar-brand" asp-area="" asp-controller="Home" asp-action="Index">@Localizer["HR Management"]</a>
                 <div class="collapse navbar-collapse">
-                    <ul class="navbar-nav">
+                    <ul class="navbar-nav me-auto">
+                        @if (User.IsInRole("Admin"))
+                        {
+                            <li class="nav-item">
+                                <a class="nav-link" asp-controller="Admin" asp-action="ManageUsers">@Localizer["Manage Users"]</a>
+                            </li>
+                        }
                         <li class="nav-item">
-                            <a class="nav-link" asp-area="" asp-controller="Departments" asp-action="Index">Departments</a>
+                            <a class="nav-link" asp-area="" asp-controller="Departments" asp-action="Index">@Localizer["Departments"]</a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link" asp-area="" asp-controller="Employees" asp-action="Index">Employees</a>
+                            <a class="nav-link" asp-area="" asp-controller="Employees" asp-action="Index">@Localizer["Employees"]</a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link" asp-area="" asp-controller="Absences" asp-action="Index">Absences</a>
+                            <a class="nav-link" asp-area="" asp-controller="Absences" asp-action="Index">@Localizer["Absences"]</a>
                         </li>
                     </ul>
-                </div>
-                <div>
-                    <partial name="_LoginPartial" />
+
+                    <!-- Language Selector -->
+                    <div class="dropdown me-3">
+                        <button class="btn btn-secondary dropdown-toggle" type="button" id="languageDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                            @Localizer["Select Language"]
+                        </button>
+                        <ul class="dropdown-menu" aria-labelledby="languageDropdown">
+                            <li>
+                                <form asp-controller="Language" asp-action="SetLanguage" method="post" style="display:inline;">
+                                    <input type="hidden" name="culture" value="en-US" />
+                                    <input type="hidden" name="returnUrl" value="@Context.Request.Path" />
+                                    <button type="submit" class="btn btn-link">English</button>
+                                </form>
+                            </li>
+                            <li>
+
+                                <form asp-controller="Language" asp-action="SetLanguage" method="post" style="display:inline;">
+                                    <input type="hidden" name="culture" value="nl" />
+                                    <input type="hidden" name="returnUrl" value="@Context.Request.Path" />
+                                    <button type="submit" class="btn btn-link">Nederlands</button>
+                                </form>
+                            </li>
+                            <li>
+                                <form asp-controller="Language" asp-action="SetLanguage" method="post" style="display:inline;">
+                                    <input type="hidden" name="culture" value="fr" />
+                                    <input type="hidden" name="returnUrl" value="@Context.Request.Path" />
+                                    <button type="submit" class="btn btn-link">Français</button>
+                                </form>
+                            </li>
+                        </ul>
+                    </div>
+
+                    <!-- Login Partial -->
+                    <div>
+                        <partial name="_LoginPartial" />
+                    </div>
                 </div>
             </div>
         </nav>
@@ -40,7 +85,7 @@
 
     <footer class="border-top footer text-muted">
         <div class="container">
-            &copy; 2024 - HRmanagementAdvanced - <a asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a>
+            &copy; 2024 - HRmanagementAdvanced - <a asp-area="" asp-controller="Home" asp-action="Privacy">@Localizer["Privacy"]</a>
         </div>
     </footer>
     <script src="~/lib/jquery/dist/jquery.min.js"></script>

@@ -1,47 +1,51 @@
 ﻿@model IEnumerable<HRmanagementAdvanced.Models.Absence>
+@using Microsoft.AspNetCore.Mvc.Localization
+@inject IViewLocalizer Localizer
 
 @{
-    ViewData["Title"] = "Index";
+    ViewData["Title"] = Localizer["Absences"];
 }
 
-<h1>Index</h1>
+<h1>@Localizer["Absences"]</h1>
+
+<form method="get" asp-action="Index">
+    <div class="input-group mb-3">
+        <input type="text" name="searchString" class="form-control" placeholder="@Localizer["Search absences"]..."
+               value="@ViewData["CurrentFilter"]" />
+        <button class="btn btn-outline-secondary" type="submit">@Localizer["Search"]</button>
+    </div>
+</form>
 
 <p>
-    <a asp-action="Create">Create New</a>
+    <a asp-action="Create" class="btn btn-primary">@Localizer["Create New"]</a>
 </p>
-<table class="table">
+<table class="table table-striped">
     <thead>
         <tr>
             <th>
-                @Html.DisplayNameFor(model => model.Date)
+                <a asp-action="Index" asp-route-sortOrder="@ViewData["DateSortParm"]">@Localizer["Date"]</a>
             </th>
             <th>
-                @Html.DisplayNameFor(model => model.Reason)
+                <a asp-action="Index" asp-route-sortOrder="@ViewData["EmployeeSortParm"]">@Localizer["Employee"]</a>
             </th>
-            <th>
-                @Html.DisplayNameFor(model => model.Employee)
-            </th>
-            <th></th>
+            <th>@Localizer["Reason"]</th>
+            <th>@Localizer["Actions"]</th>
         </tr>
     </thead>
     <tbody>
-@foreach (var item in Model) {
-        <tr>
-            <td>
-                @Html.DisplayFor(modelItem => item.Date)
-            </td>
-            <td>
-                @Html.DisplayFor(modelItem => item.Reason)
-            </td>
-            <td>
-                @Html.DisplayFor(modelItem => item.Employee.Name)
-            </td>
-            <td>
-                <a asp-action="Edit" asp-route-id="@item.AbsenceID">Edit</a> |
-                <a asp-action="Details" asp-route-id="@item.AbsenceID">Details</a> |
-                <a asp-action="Delete" asp-route-id="@item.AbsenceID">Delete</a>
-            </td>
-        </tr>
-}
+        @foreach (var absence in Model)
+        {
+            <tr>
+                <td>@absence.Date.ToShortDateString()</td>
+                <td>@absence.Employee.Name</td>
+                <td>@absence.Reason</td>
+                <td>
+                    <a asp-action="Edit" asp-route-id="@absence.AbsenceID" class="btn btn-warning btn-sm">@Localizer["Edit"]</a>
+                    <form asp-action="SoftDelete" asp-route-id="@absence.AbsenceID" method="post" style="display:inline;">
+                        <button type="submit" class="btn btn-danger btn-sm">@Localizer["Delete"]</button>
+                    </form>
+                </td>
+            </tr>
+        }
     </tbody>
 </table>

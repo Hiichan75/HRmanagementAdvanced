@@ -1,35 +1,83 @@
 ﻿@model IEnumerable<HRmanagementAdvanced.Models.Department>
+@using Microsoft.AspNetCore.Mvc.Localization
+@inject IViewLocalizer Localizer
 
 @{
-    ViewData["Title"] = "Index";
+    ViewData["Title"] = Localizer["Departments"];
 }
 
-<h1>Index</h1>
+<h1>@Localizer["Departments"]</h1>
+
+<form method="get" asp-action="Index">
+    <div class="input-group mb-3">
+        <input type="text" name="searchString" class="form-control" placeholder="@Localizer["Search departments"]..."
+               value="@ViewData["CurrentFilter"]" />
+        <button class="btn btn-outline-secondary" type="submit">@Localizer["Search"]</button>
+    </div>
+</form>
 
 <p>
-    <a asp-action="Create">Create New</a>
+    <a asp-action="Create" class="btn btn-primary">@Localizer["Create New"]</a>
 </p>
-<table class="table">
+<table class="table table-striped">
     <thead>
         <tr>
             <th>
-                @Html.DisplayNameFor(model => model.DepartmentName)
+                <a asp-action="Index" asp-route-sortOrder="@ViewData["NameSortParm"]">@Localizer["Department Name"]</a>
             </th>
-            <th></th>
+            <th>@Localizer["Actions"]</th>
         </tr>
     </thead>
     <tbody>
-@foreach (var item in Model) {
-        <tr>
-            <td>
-                @Html.DisplayFor(modelItem => item.DepartmentName)
-            </td>
-            <td>
-                <a asp-action="Edit" asp-route-id="@item.DepartmentID">Edit</a> |
-                <a asp-action="Details" asp-route-id="@item.DepartmentID">Details</a> |
-                <a asp-action="Delete" asp-route-id="@item.DepartmentID">Delete</a>
-            </td>
-        </tr>
-}
+        @foreach (var department in Model)
+        {
+            <tr>
+                <td>
+                    <a href="#" class="open-modal" data-id="@department.DepartmentID">@department.DepartmentName</a>
+                </td>
+                <td>
+                    <a asp-action="Edit" asp-route-id="@department.DepartmentID" class="btn btn-warning btn-sm">@Localizer["Edit"]</a>
+                    <form asp-action="SoftDelete" asp-route-id="@department.DepartmentID" method="post" style="display:inline;">
+                        <button type="submit" class="btn btn-danger btn-sm">@Localizer["Delete"]</button>
+                    </form>
+                </td>
+            </tr>
+        }
     </tbody>
 </table>
+
+<!-- Modal -->
+<div class="modal fade" id="detailsModal" tabindex="-1" aria-labelledby="detailsModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="detailsModalLabel">@Localizer["Department Details"]</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body" id="modalContent">
+                <!-- Content loaded dynamically via Ajax -->
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+<script>
+    $(document).on('click', '.open-modal', function (e) {
+        e.preventDefault();
+        const id = $(this).data('id');
+
+        $.ajax({
+            url: '/Departments/DepartmentDetailsAjax',
+            type: 'GET',
+            data: { id: id },
+            success: function (result) {
+                $('#modalContent').html(result);
+                $('#detailsModal').modal('show');
+            },
+            error: function () {
+                alert('@Localizer["Failed to load department details."]');
+            }
+        });
+    });
+</script>

@@ -12,55 +12,71 @@ namespace HRmanagementAdvanced.Data
     {
         public static async Task SeedUsersAsync(IServiceProvider serviceProvider)
         {
-            var userManager = serviceProvider.GetRequiredService<UserManager<IdentityUser>>();
+            var userManager = serviceProvider.GetRequiredService<UserManager<CustomUser>>();
             var roleManager = serviceProvider.GetRequiredService<RoleManager<IdentityRole>>();
 
             // Ensure roles exist
             if (!await roleManager.RoleExistsAsync("Admin"))
-            {
                 await roleManager.CreateAsync(new IdentityRole("Admin"));
-            }
 
             if (!await roleManager.RoleExistsAsync("User"))
-            {
                 await roleManager.CreateAsync(new IdentityRole("User"));
+
+            // Seed admin user
+            if (await userManager.FindByNameAsync("admin") == null)
+            {
+                var adminUser = new CustomUser
+                {
+                    UserName = "admin",
+                    Email = "admin@example.com",
+                    FirstName = "Admin",
+                    LastName = "User",
+                    EmailConfirmed = true
+                };
+
+                var result = await userManager.CreateAsync(adminUser, "123456");
+
+                if (result.Succeeded)
+                {
+                    await userManager.AddToRoleAsync(adminUser, "Admin");
+                }
             }
 
-            // Dummy users
+            // Seed additional dummy users
             var dummyUsers = new[]
             {
-                new { Username = "test123", Password = "123Abc!" },
-                new { Username = "test1234", Password = "123Abc!" },
-                new { Username = "test12345", Password = "123Abc!" }
-            };
+        new CustomUser
+        {
+            UserName = "user1",
+            Email = "user1@example.com",
+            FirstName = "User",
+            LastName = "One",
+            EmailConfirmed = true
+        },
+        new CustomUser
+        {
+            UserName = "user2",
+            Email = "user2@example.com",
+            FirstName = "User",
+            LastName = "Two",
+            EmailConfirmed = true
+        }
+    };
 
             foreach (var dummyUser in dummyUsers)
             {
-                if (await userManager.FindByNameAsync(dummyUser.Username) == null)
+                if (await userManager.FindByNameAsync(dummyUser.UserName) == null)
                 {
-                    var user = new IdentityUser
-                    {
-                        UserName = dummyUser.Username,
-                        EmailConfirmed = true // Optional, won't affect login
-                    };
-
-                    var result = await userManager.CreateAsync(user, dummyUser.Password);
+                    var result = await userManager.CreateAsync(dummyUser, "123456");
 
                     if (result.Succeeded)
                     {
-                        // Assign role to user
-                        if (await roleManager.RoleExistsAsync("User"))
-                        {
-                            await userManager.AddToRoleAsync(user, "User");
-                        }
-                    }
-                    else
-                    {
-                        throw new Exception($"Failed to create user {dummyUser.Username}: {string.Join(", ", result.Errors.Select(e => e.Description))}");
+                        await userManager.AddToRoleAsync(dummyUser, "User");
                     }
                 }
             }
         }
+
 
         public static async Task SeedDataAsync(IServiceProvider serviceProvider)
         {
@@ -129,4 +145,3 @@ namespace HRmanagementAdvanced.Data
         }
     }
 }
-//

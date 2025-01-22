@@ -11,7 +11,9 @@ namespace HRmanagementAdvanced.Models
         [StringLength(100)]
         public string DepartmentName { get; set; }
 
+        // Soft delete flag
+        public bool IsDeleted { get; set; } = false;
+
         public ICollection<Employee> Employees { get; set; } = new List<Employee>();
     }
 }
-//

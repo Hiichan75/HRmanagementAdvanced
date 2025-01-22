@@ -1,0 +1,13 @@
+﻿@model HRmanagementAdvanced.Models.Department
+
+<div>
+    <h4>Department Details</h4>
+    <p><strong>Name:</strong> @Model.DepartmentName</p>
+    <p><strong>Employees:</strong></p>
+    <ul>
+        @foreach (var employee in Model.Employees)
+        {
+            <li>@employee.Name</li>
+        }
+    </ul>
+</div>
